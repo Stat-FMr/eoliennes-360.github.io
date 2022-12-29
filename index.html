@@ -24,7 +24,7 @@
   z-index: 1;
   top: 0;
   overflow-x: hidden;
-  padding-top: 20px;
+  /* padding-top: 20px; */
 }
 
 /* Control the left side */
@@ -299,12 +299,33 @@ function poiGroupings(unobspoint,despoi,unrayon){
 			lesmins[lesgroupes.indexOf(laprop)]=lazimut;
 			lesmaxs[lesgroupes.indexOf(laprop)]=lazimut;
 			}
-			else{
-			if(lazimut<lesmins[lesgroupes.indexOf(laprop)] && lazimut>-1){lesmins[lesgroupes.indexOf(laprop)]=lazimut};
-			if(lazimut>lesmaxs[lesgroupes.indexOf(laprop)] && lazimut<360){lesmaxs[lesgroupes.indexOf(laprop)]=lazimut};
+			else{				// si le groupe existe deja
+			// on cherche dans le demi-plan après 180+lesmins
+			// if(lazimut>180+lesmins[lesgroupes.indexOf(laprop)]){lesmins[lesgroupes.indexOf(laprop)]=lazimut-360};
+			if(lazimut<lesmins[lesgroupes.indexOf(laprop)]){lesmins[lesgroupes.indexOf(laprop)]=lazimut;};
+			if(lazimut>lesmaxs[lesgroupes.indexOf(laprop)]){lesmaxs[lesgroupes.indexOf(laprop)]=lazimut};
 			unpoi.properties.lacouleur=lescouleurs[lesgroupes.indexOf(laprop)];			
 			}
 	});
+	let lesecarts=[];
+	for(let k=0;k<lesmaxs.length;k++){
+		lesecarts[k]=lesmaxs[k]-lesmins[k];
+		if(lesecarts[k]>180){
+				let onepark=despoi.features.filter(item=>item.properties.poigroup==lesgroupes[k]);
+				let oneparkright=0;
+				let oneparkleft=360;
+				onepark.forEach(function(onepoint){
+				if(onepoint.properties.angle<=180){oneparkright=Math.max(oneparkright,onepoint.properties.angle)};
+				if(onepoint.properties.angle>=180){oneparkleft=Math.min(oneparkleft,onepoint.properties.angle)};
+				lesmaxs[k]=oneparkright;
+				lesmins[k]=oneparkleft;
+				}
+				)
+			window.alert("je recupere a gauche /"+oneparkleft+"/ a droite /"+oneparkright+"avec"+JSON.stringify(onepark));
+			};
+			// let totomin=Math.min(toto.features.properties.angle);
+		};
+
 	// let toto = Object.values(despoi.features).properties.poigroup;
 	// window.alert("2.boucle sur :"+lesgroupes);
 	<!-- window.alert("2.Parc 2 min/max :"+lesmins[lesgroupes.indexOf("Parc 2")]+"/"+lesmaxs[lesgroupes.indexOf("Parc 2")]); -->
@@ -331,6 +352,7 @@ const larcdecercle={'type': 'FeatureCollection','features':[]}; // debut du geoj
 							<!-- '],['+coordcercle(unobspoint,unrayon-0.1,lesmins[lesgroupes.indexOf(ungroupe)])+ -->
 							<!-- ']]]}}');	 -->
 		let lechemindarc= "";
+		if(lesmins[lesgroupes.indexOf(ungroupe)]>lesmaxs[lesgroupes.indexOf(ungroupe)]){lesmins[lesgroupes.indexOf(ungroupe)]=lesmins[lesgroupes.indexOf(ungroupe)]-360}
 		for(let k=Math.floor(lesmins[lesgroupes.indexOf(ungroupe)]);k<lesmaxs[lesgroupes.indexOf(ungroupe)]+1;k++){
 			lechemindarc=lechemindarc+'],['+coordcercle(unobspoint,unrayon-0.1,k);
 			};
@@ -464,7 +486,7 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 
 			});
 			map.on('click', 'lesarcs', function (e) {
-					var coordinates = e.features[0].geometry.coordinates.slice();
+					var coordinates = e.lngLat.toArray();
 					var description = e.features[0].properties.poigroup;
 					 
 					// Ensure that if the map is zoomed out such that multiple
@@ -486,7 +508,7 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						let poi_vector={'type': 'FeatureCollection','features':[]};;
 						// window.alert("dblclick:"+obs_point);
 						ungeojson.features.forEach(function(onemore){
-						if(distance(obs_point,onemore.geometry.coordinates)<10){
+						if(distance(obs_point,onemore.geometry.coordinates)<theradius){
 							poi_vector.features.push(onemore);
 							};
 						});
@@ -497,8 +519,8 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						map.getSource('touslespoi').setData(poi_vector);
 						map.getSource('lecercle').setData(thedata);
 						map.getSource('lesarcs').setData(thesectors);
-						map.setZoom
-						here_marker.setLngLat(obs_point)
+						map.setZoom(11);
+						here_marker.setLngLat(obs_point);
 						// map.removeSource();
 						} // fin de la confirmation
 					});
@@ -509,19 +531,19 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						let poi_vector={'type': 'FeatureCollection','features':[]};;
 						// window.alert("dblclick:"+obs_point);
 						ungeojson.features.forEach(function(onemore){
-						if(distance(obs_point,onemore.geometry.coordinates)<10){
+						if(distance(obs_point,onemore.geometry.coordinates)<theradius){
 							poi_vector.features.push(onemore);
 							};
 						});
-						window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
+						// window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
 						let thedata=computeStatCircle(obs_point,poi_vector,5)
 						let thesectors=poiGroupings(obs_point,poi_vector,5)
-						window.alert("dblclick:"+JSON.stringify(thesectors));
+						// window.alert("touchend:"+JSON.stringify(thesectors));
 						map.getSource('touslespoi').setData(poi_vector);
 						map.getSource('lecercle').setData(thedata);
 						map.getSource('lesarcs').setData(thesectors);
-						map.setZoom
-						here_marker.setLngLat(obs_point)
+						map.setZoom(11);
+						here_marker.setLngLat(obs_point);
 						// map.removeSource();
 						} // fin de la confirmation
 					});
@@ -533,6 +555,26 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 			map.on('mouseleave', 'lesarcs', function () {
 					map.getCanvas().style.cursor = '';
 					});
+			let poi_popup = new maplibregl.Popup({
+					closeButton: false,
+					closeOnClick: false
+				});
+			map.on('mouseover', 'touslespoi', function(e) {
+				map.getCanvas().style.cursor = 'pointer';
+				let coordinates = e.features[0].geometry.coordinates.slice();
+				// let description = e.features[0].properties.description;
+				let description='<strong>'+e.features[0].properties.NOM_PARC+'</strong><BR/>'+
+								'Eolienne : '+e.features[0].properties.NUMERO+'<BR/>'+
+								'Hauteur : '+e.features[0].properties.HT_MAX+'<BR/>'+
+								'dont visible : '+Math.round(1000*e.features[0].properties.pctvisible)/10+' %<BR/>'+
+								'Statut : '+e.features[0].properties.LEG_MAT;
+				poi_popup.setLngLat(coordinates).setHTML(description).addTo(map);
+					// console.log('A mouseover event has occurred on a visible portion of the poi-label layer.');
+			});
+			map.on('mouseleave', 'touslespoi', function () {
+				map.getCanvas().style.cursor = '';
+				poi_popup.remove();
+			});
 			map.on('mousemove', function (e) {
 			let x=Math.round(1000*e.lngLat.lng)/1000;
 			let y=Math.round(1000*e.lngLat.lat)/1000;
@@ -547,10 +589,17 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 
 };
 
-function maj_radius(radius){
+function maj_radius(){
 // mettre a jour le texte du rayon
+let radius=document.getElementById('rangeElement').value;
 document.getElementById('radius').innerHTML = radius	;
 // lancer la mise a jour du cercle
+  poi_vector={'type': 'FeatureCollection','features':[]};;
+	allpois.features.forEach(function(oneitem){
+	if(oneitem.properties.poidistance<radius){
+	poi_vector.features.push(oneitem);}
+	});
+	drawMap(obs_point,poi_vector,a_circle=computeStatCircle(obs_point,poi_vector,5),some_sectors=poiGroupings(obs_point,poi_vector,5)) ;
 // window.alert("on est dans la mise à jour avec un rayon de "+radius);
 };
 // FIN DES FONCTIONS
@@ -659,14 +708,14 @@ const obs_point = [4.2261, 47.6675];
 		  maj_btn.setAttribute("type", "button");		  
 		  maj_btn.setAttribute("id", "maj_btn");
 		  maj_btn.setAttribute("value", "Mettre à jour");
-		  maj_btn.setAttribute("onclick", "maj_radius("+range.value+")");
+		  maj_btn.setAttribute("onclick", "maj_radius("+")");
 		  document.getElementById('form_radiuschange').appendChild(maj_btn);
 		}});
 		<!-- range.addEventListener('mouseout', function(){ -->
 		  <!-- range.value = '50'; -->
 		<!-- }); -->
 		
-		
+let theradius=10;		
 let uneurl="./eolienne_bfc.json";
 let ungeojson;  // on definit ungeojson en variable globale pour le (re)utiliser à différents moments
 unereponse=fetch(uneurl)
@@ -693,7 +742,7 @@ unereponse=fetch(uneurl)
 	});
 	ungeojson=allpois;
 	allpois.features.forEach(function(oneitem){
-	if(oneitem.properties.poidistance<10){
+	if(oneitem.properties.poidistance<theradius){
 	poi_vector.features.push(oneitem);}
 	});
 	// let poi_vector.features=allpois.filter(item => item.properties.poidistance<10);	
@@ -703,7 +752,7 @@ unereponse=fetch(uneurl)
 	}) // fin du .then(data
 .then( datum => {
 // window.alert("Les secteurs, ca donne entre @@, @@"+JSON.stringify(poiGroupings(obs_point,datum,5))+"@@")
-drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,5),somes_sectors=poiGroupings(obs_point,datum,5)) ;
+drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,5),some_sectors=poiGroupings(obs_point,datum,5)) ;
 
 // window.alert("on a tout lu soit:"+Object.keys(datum.features).length+"!");
 }
@@ -712,7 +761,7 @@ drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,5),somes_sect
 	;
 // fin du fetch	
 
-// drawMap(obs_point,a_geojson=poi_vector,a_circle=computeStatCircle(obs_point,poi_vector,5),somes_sectors=poiGroupings(obs_point,poi_vector,5)) // obs_point,a_geojson,a_circle,some_sectors
+// drawMap(obs_point,a_geojson=poi_vector,a_circle=computeStatCircle(obs_point,poi_vector,5),some_sectors=poiGroupings(obs_point,poi_vector,5)) // obs_point,a_geojson,a_circle,some_sectors
 
 // TODO : ajouter les hauteurs et les éclairages de relief (hillshade)
 </script>
