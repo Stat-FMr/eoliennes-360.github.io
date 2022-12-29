@@ -64,8 +64,19 @@
     <!-- <p>Some text here too.</p> -->
 	</div>
 <div id="footer" class="split ctrlbottom">
-Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les coordonnées sont affichées ci-dessous :
-<pre id="info" ></pre>
+<div id="loadingign" ></div>
+Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les coordonnées sont les suivantes :
+	<div id="info" style="display: inline;" ></div>
+	<br/>
+	<div style="display: inline;">Les éoliennes sont considérées dans un rayon de </div>
+<div id="radius" style="display: inline;" >10</div>
+<div style="display: inline;" >km. Utilisez le curseur pour changer la valeur entre 1 et 25 km, actuellement </div>
+<div id="radiuschange" style="display: inline;" >10</div>
+	<br/>
+<div id="form_radiuschange">
+<input type="range" min="1" max="25" value="10" class="slider" id="rangeElement">
+</div>
+	<!-- <pre id="majrayons"   contentEditable="true">25</pre> -->
 </div>
 	<!-- <div id="cercle" class="split left">	</div> -->
 <script>
@@ -204,7 +215,7 @@ function angleAzimut(pointA, pointB){ // calcul de l azimut a partir du Nord
 // FR: caracterisation des POI par rapport au point d'observation
 // EN: characteristics of the POI depending on observation point
 function POIAroundObs(unobspoint,despoi,unrayonmin=0,unrayonmax=10){
-	window.alert("despoi a une longueur de "+despoi.features.length);
+	 //window.alert("despoi a une longueur de "+despoi.features.length);
 	despoi.features.forEach(function(unpoi){
 		const lepct=pctAboveHorizon(unobspoint,unpoi,unpoi.properties.poiheight);
 		const langle=Math.floor(angleAzimut(unobspoint,unpoi.geometry.coordinates));
@@ -267,20 +278,31 @@ function poiGroupings(unobspoint,despoi,unrayon){
 	let lesmins=[];
 	let lesmaxs=[];
 	// window.alert("0.on a un nbpoi egal a "+despoi.features.length+"!");
-	despoi.features.forEach(function(unpoi){
-		// window.alert("1.boucle sur :"+JSON.stringify(unpoi));
+	despoi.features.forEach(function(unpoi,index){
+		let loopnb=index+1;
+		// window.alert("1.boucle sur :"+loopnb);
+		if(loopnb==despoi.features.length)
+			{
+			document.getElementById('loadingign').innerHTML="";
+			}
+			else
+			{
+			document.getElementById('loadingign').innerHTML ="Chargement du profil de terrain "+loopnb+" sur "+despoi.features.length;
+			};
 		let laprop=unpoi.properties.poigroup;
 		let lazimut=angleAzimut(unobspoint,unpoi.geometry.coordinates);
 		// window.alert("1.boucle sur :"+laprop);
-			if(lesgroupes.filter(item => item == laprop ).length==0){
+			if(lesgroupes.filter(item => item == laprop ).length==0){     // si on initialise le groupe
 			lesgroupes.push(laprop);
 			lescouleurs[lesgroupes.indexOf(laprop)]=colorGenerator();
+			unpoi.properties.lacouleur=lescouleurs[lesgroupes.indexOf(laprop)];
 			lesmins[lesgroupes.indexOf(laprop)]=lazimut;
 			lesmaxs[lesgroupes.indexOf(laprop)]=lazimut;
 			}
 			else{
 			if(lazimut<lesmins[lesgroupes.indexOf(laprop)] && lazimut>-1){lesmins[lesgroupes.indexOf(laprop)]=lazimut};
-			if(lazimut>lesmaxs[lesgroupes.indexOf(laprop)] && lazimut<360){lesmaxs[lesgroupes.indexOf(laprop)]=lazimut};			
+			if(lazimut>lesmaxs[lesgroupes.indexOf(laprop)] && lazimut<360){lesmaxs[lesgroupes.indexOf(laprop)]=lazimut};
+			unpoi.properties.lacouleur=lescouleurs[lesgroupes.indexOf(laprop)];			
 			}
 	});
 	// let toto = Object.values(despoi.features).properties.poigroup;
@@ -350,22 +372,27 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 	.addTo(map);
 	map.doubleClickZoom.disable(); // on utilise le dblclick pour recentrer la carte
 	// window.alert(JSON.stringify(a_circle));
+	window.alert("la description de tous les poi :"+JSON.stringify(a_geojson));
 		map.on('load', function () {
 				map.addSource('lecercle', {
 						'type': 'geojson',
 						'data': a_circle
 					});
-				map.addSource('touslespoi', {
+				map.addSource('poisubset', {
 						'type': 'geojson',
 						'data': a_geojson
 					});	
-				map.setPaintProperty('building', 'fill-color', [
-					['zoom'],
-					15,
-					'#e2714b',
-					22,
-					'#eee695'
-					]);
+				map.addSource('touslespoi', {
+						'type': 'geojson',
+						'data': ungeojson
+					});	
+				<!-- map.setPaintProperty('building', 'fill-color', [ -->
+					<!-- ['zoom'], -->
+					<!-- 15, -->
+					<!-- '#e2714b', -->
+					<!-- 22, -->
+					<!-- '#eee695' -->
+					<!-- ]); -->
 				map.addSource('lesarcs', {
 						'type': 'geojson',
 						'data': some_sectors
@@ -375,11 +402,31 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						'type': 'circle',
 						'source': 'touslespoi',
 						'paint': {
-					"circle-color": "hsla(0,0%,0%,0.75)",
+					"circle-color": "grey",// "circle-color": "hsla(0,0%,0%,0.75)",
 					"circle-stroke-width": 1.5,
-					"circle-stroke-color": "red",
+					"circle-stroke-color": "black",
 						}
-					});			
+					});	
+				map.addLayer({
+						'id': 'visiblepoisubset',
+						'type': 'circle',
+						'source': 'poisubset',
+						'paint': {
+							"circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)",
+							"circle-stroke-width": 1.5,
+							"circle-stroke-color": "red"
+						}
+					});	
+				<!-- map.addLayer({ -->
+						<!-- 'id': 'invisiblepoisubset', -->
+						<!-- 'type': 'circle', -->
+						<!-- 'source': 'poisubset', -->
+						<!-- 'paint': { -->
+					<!-- "circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)", -->
+					<!-- "circle-stroke-width": 1.5, -->
+					<!-- "circle-stroke-color": "green"}, -->
+						<!-- 'filter': ['<', 'pctvisible', '0.1'] -->
+					<!-- }); -->
 				map.addLayer({
 						'id': 'lesarcs',
 						'type': 'fill',
@@ -433,26 +480,51 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 					.addTo(map);
 					});
 			map.on('dblclick', function (e) {
-					let obs_point=e.lngLat.toArray();
-					let poi_vector={'type': 'FeatureCollection','features':[]};;
-					// window.alert("dblclick:"+obs_point);
-					ungeojson.features.forEach(function(onemore){
-					if(distance(obs_point,onemore.geometry.coordinates)<10){
-						poi_vector.features.push(onemore);
-						};
+					let changePage=window.confirm("Voulez-vous centrer la carte sur ce point"+e.lngLat.toArray()+"?")
+						if(changePage==true){
+						let obs_point=e.lngLat.toArray();
+						let poi_vector={'type': 'FeatureCollection','features':[]};;
+						// window.alert("dblclick:"+obs_point);
+						ungeojson.features.forEach(function(onemore){
+						if(distance(obs_point,onemore.geometry.coordinates)<10){
+							poi_vector.features.push(onemore);
+							};
+						});
+						window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
+						let thedata=computeStatCircle(obs_point,poi_vector,5)
+						let thesectors=poiGroupings(obs_point,poi_vector,5)
+						window.alert("dblclick:"+JSON.stringify(thesectors));
+						map.getSource('touslespoi').setData(poi_vector);
+						map.getSource('lecercle').setData(thedata);
+						map.getSource('lesarcs').setData(thesectors);
+						map.setZoom
+						here_marker.setLngLat(obs_point)
+						// map.removeSource();
+						} // fin de la confirmation
 					});
-					window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
-					let thedata=computeStatCircle(obs_point,poi_vector,5)
-					let thesectors=poiGroupings(obs_point,poi_vector,5)
-					window.alert("dblclick:"+JSON.stringify(thesectors));
-					map.getSource('touslespoi').setData(poi_vector);
-					map.getSource('lecercle').setData(thedata);
-					map.getSource('lesarcs').setData(thesectors);
-					map.setZoom
-					here_marker.setLngLat(obs_point)
-					// map.removeSource();
+			map.on('touchend', function (e) {
+					let changePage=window.confirm("Voulez-vous centrer la carte sur ce point"+e.lngLat.toArray()+"?")
+						if(changePage==true){
+						let obs_point=e.lngLat.toArray();
+						let poi_vector={'type': 'FeatureCollection','features':[]};;
+						// window.alert("dblclick:"+obs_point);
+						ungeojson.features.forEach(function(onemore){
+						if(distance(obs_point,onemore.geometry.coordinates)<10){
+							poi_vector.features.push(onemore);
+							};
+						});
+						window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
+						let thedata=computeStatCircle(obs_point,poi_vector,5)
+						let thesectors=poiGroupings(obs_point,poi_vector,5)
+						window.alert("dblclick:"+JSON.stringify(thesectors));
+						map.getSource('touslespoi').setData(poi_vector);
+						map.getSource('lecercle').setData(thedata);
+						map.getSource('lesarcs').setData(thesectors);
+						map.setZoom
+						here_marker.setLngLat(obs_point)
+						// map.removeSource();
+						} // fin de la confirmation
 					});
-	
 					// Change the cursor to a pointer when the mouse is over the places layer.
 			map.on('mouseenter', 'lesarcs', function () {
 					map.getCanvas().style.cursor = 'pointer';
@@ -462,14 +534,24 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 					map.getCanvas().style.cursor = '';
 					});
 			map.on('mousemove', function (e) {
+			let x=Math.round(1000*e.lngLat.lng)/1000;
+			let y=Math.round(1000*e.lngLat.lat)/1000;
 			document.getElementById('info').innerHTML =
 			// e.point is the x, y coordinates of the mousemove event relative
 			// to the top-left corner of the map
 			  // JSON.stringify(e.point) + '<br />' +
 			// e.lngLat is the longitude, latitude geographical position of the event
-			JSON.stringify(e.lngLat.wrap());
+			// JSON.stringify(e.lngLat.wrap());
+			"longitude :"+x+" et latitude :"+y;
 				});	
 
+};
+
+function maj_radius(radius){
+// mettre a jour le texte du rayon
+document.getElementById('radius').innerHTML = radius	;
+// lancer la mise a jour du cercle
+// window.alert("on est dans la mise à jour avec un rayon de "+radius);
 };
 // FIN DES FONCTIONS
 
@@ -566,6 +648,25 @@ const obs_point = [4.2261, 47.6675];
 // poiGroupings(obs_point,poi_vector,5);
 // uneurl="https://trouver.ternum-bfc.fr/dataset/823e3d64-cd5c-4b0d-bf52-db8036e7f5bd/resource/7d4e3b72-0ac2-4596-b3e0-29deffef8614/service_proxy?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=n_mat_eolien_p_r27_97e1489&OUTPUTFORMAT=geojson&CRSNAME=EPSG:4326";
 
+
+
+	let range = document.getElementById('rangeElement');
+		range.addEventListener('change', function(){
+			document.getElementById('radiuschange').innerHTML = range.value	;
+			//document.getElementById('form_radiuschange').removeChild('maj_btn');
+		if(document.getElementById('maj_btn') == null){
+		let maj_btn=document.createElement("INPUT");
+		  maj_btn.setAttribute("type", "button");		  
+		  maj_btn.setAttribute("id", "maj_btn");
+		  maj_btn.setAttribute("value", "Mettre à jour");
+		  maj_btn.setAttribute("onclick", "maj_radius("+range.value+")");
+		  document.getElementById('form_radiuschange').appendChild(maj_btn);
+		}});
+		<!-- range.addEventListener('mouseout', function(){ -->
+		  <!-- range.value = '50'; -->
+		<!-- }); -->
+		
+		
 let uneurl="./eolienne_bfc.json";
 let ungeojson;  // on definit ungeojson en variable globale pour le (re)utiliser à différents moments
 unereponse=fetch(uneurl)
@@ -596,7 +697,7 @@ unereponse=fetch(uneurl)
 	poi_vector.features.push(oneitem);}
 	});
 	// let poi_vector.features=allpois.filter(item => item.properties.poidistance<10);	
-	window.alert("on va regarder sur "+poi_vector.featureslength+" poi");
+	// window.alert("on va regarder sur "+poi_vector.featureslength+" poi");
 	// window.alert("poi_vector vaut "+JSON.stringify(poi_vector));
 	return poi_vector;
 	}) // fin du .then(data
