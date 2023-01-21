@@ -58,29 +58,88 @@
 
 </style>
 
-	<div id="map" class="split maptop">
-    <!-- <img src="img_avatar.png" alt="Avatar man"> -->
-    <!-- <h2>John Doe</h2> -->
-    <!-- <p>Some text here too.</p> -->
-	</div>
+<div id="map" class="split maptop">
+<!-- Partie occupee par la carte -->
+</div>
 <div id="footer" class="split ctrlbottom">
-<div id="loadingign" ></div>
-Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les coordonnées sont les suivantes :
+	<!-- Fonction 0 : temporisation / lazy loading -->
+	<div id="loadingign" >
+	</div>
+	<!-- Fonction 1 : deplacement -->
+	Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les coordonnées sont les suivantes :
 	<div id="info" style="display: inline;" ></div>
 	<br/>
-	<div style="display: inline;">Les éoliennes sont considérées dans un rayon de </div>
-<div id="radius" style="display: inline;" >10</div>
-<div style="display: inline;" >km. Utilisez le curseur pour changer la valeur entre 1 et 25 km, actuellement </div>
-<div id="radiuschange" style="display: inline;" >10</div>
-	<br/>
-<div id="form_radiuschange">
-<input type="range" min="1" max="25" value="10" class="slider" id="rangeElement">
+	<!-- Fonction 2 : changement population -->	
+		<div id="cautionnewparam" style="color:black;">
+		Pour mettre à jour, cliquer sur le bouton
+	</div>
+	<div style="display: inline;">
+	Les éoliennes sont considérées dans un rayon de 
+	</div>
+		<div id="radius" style="display: inline;" >
+		10
+		</div>
+		<div style="display: inline;" >km : il y en a </div>
+		<div style="display: inline;" id="nbpoi" ></div>
+		<div style="display: inline;" >dans </div>
+		<div style="display: inline;" id="nbpoigroup" ></div>
+		<div style="display: inline;" >
+		parcs.<br/>
+		Utilisez le curseur pour changer la valeur entre 1 et 25 km, actuellement 
+		</div>
+		<div id="radiuschange" style="display: inline;" >10
+		</div>
+		<br/>
+		<div id="form_poiradius_change">
+		<input type="range" min="1" max="25" value="10" class="slider" id="rangeElement" onchange="addMAJButton()">
+		</div>
+		<div id="form_poitype_change">
+		  <input type="checkbox" id="choixinstr" name="instruct" value="instr" onchange="addMAJButton()" >
+		  <label for="choixinstr"> En instruction</label>
+		  <input type="checkbox" id="choixaccord" name="accorde" value="accord" onchange="addMAJButton()" >
+		  <label for="choixaccor"> Accordée</label>
+		  <input type="checkbox" id="choixconstr" name="construit" value="constr" onchange="addMAJButton()" >
+		  <label for="choixconstr"> Construite</label>
+		  <input type="checkbox" id="choixrefus" name="refuse" value="refus" onchange="addMAJButton()" >
+		  <label for="choixconstr"> Refusé</label>
+		</div>
 </div>
-	<!-- <pre id="majrayons"   contentEditable="true">25</pre> -->
-</div>
-	<!-- <div id="cercle" class="split left">	</div> -->
 <script>
+// generer aleatoirement des couleurs pour les groupes de POIs
+function colorGenerator(){
+	let thestring="";
+	for(let i=0;i<3;i++)
+		{ 
+			one=Math.floor(Math.random()*16);
+			onemore=one.toString(16);
+			thestring=thestring+onemore;
+		}
+  return "#"+thestring;
+}
 
+function addMAJButton(){
+		urlParams.set('radius',document.getElementById('rangeElement').value);
+		document.getElementById("radiuschange").innerHTML=document.getElementById('rangeElement').value;
+		let caseC = (choixconstr.checked)? "C":"";
+		let caseA = (choixaccord.checked)? "A":"";
+		let caseI = (choixinstr.checked)? "I":"";
+		let caseR = (choixrefus.checked)? "R":"";
+		urlParams.set('poitype',caseC+caseA+caseI+caseR);
+		document.getElementById("cautionnewparam").style="color:red;";
+		if(document.getElementById('maj_btn') == null){
+			let maj_btn=document.createElement("INPUT");
+			maj_btn.setAttribute("type", "button");		  
+			maj_btn.setAttribute("id", "maj_btn");
+			maj_btn.setAttribute("value", "Mettre à jour");
+			maj_btn.setAttribute("onclick", "MAJaction(maj_btn)");
+			document.getElementById('cautionnewparam').appendChild(maj_btn);
+		}
+	};
+	
+function MAJaction(elem){
+		document.getElementById('cautionnewparam').removeChild(elem);
+		window.location.assign(window.location.pathname+"?"+urlParams);
+	};
 // FR: Premiere etape => fonctions unitaires pour chaque POI
 // EN: First step => simple functions to be used for each POI
 
@@ -90,21 +149,6 @@ Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les co
 // d = 6371 x arccos (sin(latitudeA)xsin(latitudeB)+cos(latitudeA)cos(latitudeB)cos(longitudeB-longitudeA)
 // FR:conversion lat en degre minutes vers decimal via https://www.fcc.gov/media/radio/dms-decimal
 // FR:6371 km = rayon moyen de la terre / 6366 au niveau de Montbard selon https://fr.planetcalc.com/7721/
-
-function colorGenerator(){
-	let thestring="";
-	// let thebigstring="";
-	for(let i=0;i<3;i++)
-		{ 
-			one=Math.floor(Math.random()*16);
-			onemore=one.toString(16);
-			thestring=thestring+onemore;
-			// thebigstring=thebigstring+"tirage"+one+"converti:"+onemore+"/";
-			// toutca=thestring+"</br>"+thebigstring;
-		}
-  return "#"+thestring;
-}
-
 function distance(pointA, pointB){
 	const latA=pointA[1];
 	const latB=pointB[1];
@@ -112,7 +156,6 @@ function distance(pointA, pointB){
 	const lonB=pointB[0];
 	return (6371*Math.acos(Math.sin(latA*Math.PI/180)*Math.sin(latB*Math.PI/180)+Math.cos(latA*Math.PI/180)*Math.cos(latB*Math.PI/180)*Math.cos((lonB-lonA)*Math.PI/180)));
 }
-
 // FR:profil altimetrique entre deux points a partir du site de l'ign
 // EN:altitude between two points (using IGN webservice)
 function profilAlti(pointA,pointB){
@@ -121,62 +164,44 @@ function profilAlti(pointA,pointB){
 	let latB=pointB[1];
 	let lonB=pointB[0];
 	const getprofil="https://wxs.ign.fr/calcul/alti/rest/elevationLine.json?sampling=10&lon="+lonA+"|"+lonB+"&lat="+latA+"|"+latB;
-	// console.log("thealtitudes vaut :"+getprofil);
 	const xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", getprofil, false ); // false for synchronous request
     xmlHttp.send( null );
-	// window.alert(getprofil+" donne en retour :"+xmlHttp.responseText);
 	return xmlHttp.responseText;
 };
-<!-- FR:exemple appel webservice  / EN:webservice example -->
-<!-- https://wxs.ign.fr/calcul/alti/rest/elevationLine.json?sampling=10&lon=0.2367|2.1570|4.3907&lat=48.0551|46.6077|43.91&indent=true -->
 
 // FR: angle de vision par rapport au relief
 // EN: view angulus considering natural relief
-// TODO : ajouter une fonction pour une hauteur du point d'observation (1m70 pour un humain)
 function alphaMaxProfil(obspoint,leprofil){
 	let alphamax=-90;
-	// window.alert("leprofil egal "+leprofil);
 	altitudes=JSON.parse(leprofil).elevations;
-	// altitudes=profil.elevations;
-	// window.alert("altitudes egal "+altitudes[0].lon);
-	for(i in altitudes){
+	for(i in altitudes){ // calcul de langle pas a pas
 	if(i>0){      // le premier point est à distance nulle donc pas d'angle, enfin si : -90
-	    // window.alert("le point de lon lat"+altitudes[i].lon+" / "+altitudes[i].lat+" altitude "+altitudes[i].z);	
 		alpha=(180/Math.PI)*Math.atan(((altitudes[i].z-altitudes[0].z))/(1000*distance(obspoint,[altitudes[i].lon,altitudes[i].lat]))); // passer l'altitude en km
-	 <!-- window.alert("alpha vaut :"+alpha+"deg avec altitude:"+altitudes[i].z+"/"+altitudes[0].z+" distance de "+distance(obspoint,[altitudes[i].lon,altitudes[i].lat])); -->
 		if(alpha>alphamax){alphamax=alpha;};
 		}
 	};
-	// window.alert("alphamax egal "+alphamax);
 	return alphamax;
 };
-
 // FR: visibilite d'un POI par rapport à la ligne d'horizon
 // EN: angulus from the horizon line
 function pctAboveHorizon(obspoint,poi,height_poi){
-	// leprofil=1; // mettre la fonction
-	// window.alert("IGN dit que "+profilAlti(obspoint,poi.geometry.coordinates)+"avec obspoint"+obspoint);
     thealtitudes=profilAlti(obspoint,poi.geometry.coordinates);
 	alphamax=alphaMaxProfil(obspoint,thealtitudes);
 	baseheight=JSON.parse(thealtitudes).elevations[0].z;
 	finalheight=JSON.parse(thealtitudes).elevations[9].z;
-	<!-- window.alert("on va de hauteur"+baseheight+" à hauteur de "+finalheight+" avec alphamax "+alphamax); -->
 	// horizon est la hauteur absolue du point le plus bas qui sera vu à une distance d
-	horizon=Math.tan(alphamax*Math.PI/180)*distance(obspoint,poi.geometry.coordinates)*1000+baseheight; // on ramène le premier terme de km en m
 	// FR:tan(alphamax)*distance(obspoint,poi) est la hauteur cachée par le relief
+	horizon=Math.tan(alphamax*Math.PI/180)*distance(obspoint,poi.geometry.coordinates)*1000+baseheight; // on ramène le premier terme de km en m
 	// finalheight+height_poi est la hauteur max atteinte par le poi
 	pct_unlimited=(horizon-finalheight)/height_poi;
 	pct_limited=Math.min(Math.max(0,pct_unlimited),1)
-	// pct_hidden=Math.max(heightmax,0)/(finalheight+height_poi); // pct_hidden plus gd que 1 veut dire horizon cache poi 
-	<!-- window.alert("On a un horizon de"+horizon+" pour une eolienne de "+height_poi+ -->
-	<!-- " m à une distance de "+distance(obspoint,poi.geometry.coordinates)+" et un alphamax de :"+alphamax+ -->
-	<!-- "on part de hauteur"+baseheight+" à hauteur de "+finalheight+"!"+"donc le pct caché est :"+pct_limited+"sur une base de "+pct_unlimited); -->
 	return 1-pct_limited; // FR: entre 0 et 1
 };
 
 // FR: Deuxieme etape => travail autour du point d'observation
 // EN: Second step => working around the observation point
+
 
 function coordcercle(uncentre,unrayon,unangle){    // uncentre avec lon,lat puis unrayon en km, un angle en degres
 // la fonction se base sur l'approximation que le cercle en surface est orthogonal au rayon de la terre en corrigeant la longitude (le cercle est moins grand)
@@ -184,10 +209,9 @@ function coordcercle(uncentre,unrayon,unangle){    // uncentre avec lon,lat puis
 	const lalon=(180/Math.PI)*(unrayon*Math.sin(unangle*Math.PI/180)/(6371*Math.cos(uncentre[1]*Math.PI/180)));	
 	const lalat=(180/Math.PI)*(Math.atan(Math.sinh(unrayon*Math.cos(unangle*Math.PI/180)/6371))); 
 	const leretour=[uncentre[0]+lalon,uncentre[1]+lalat];
-//	const verifdist=distance(uncentre,leretour);
+	// window.alert("coordcercle donne:"+leretour);
 	return leretour; 
 };
-
 function angleAzimut(pointA, pointB){ // calcul de l azimut a partir du Nord
 	let angleout=0; // on part sur le point au nord
 	const latA=pointA[1];
@@ -200,7 +224,6 @@ function angleAzimut(pointA, pointB){ // calcul de l azimut a partir du Nord
 	// let parallele=6371*Math.acos(Math.sin(latA*Math.PI/180)*Math.sin(latA*Math.PI/180)+Math.cos(latA*Math.PI/180)*Math.cos(latA*Math.PI/180)*Math.cos((lonB-lonA)*Math.PI/180));
 	// on determine l'angle avec le sinus et cosinus
 	let anglemajeur=180*Math.acos(meridien/distance(pointA, pointB))/Math.PI; // Arccos répond dans O,PI et on recale dans 0,180
-	// window.alert("on est dans la fonction8");
 	if(lonB==lonA){
 				if (latB>=latA) {angleout=0} else {angleout=180}
 				 }
@@ -208,24 +231,17 @@ function angleAzimut(pointA, pointB){ // calcul de l azimut a partir du Nord
 		else if (lonB>lonA && latB<latA) {angleout=180-anglemajeur} 
 		else if (lonB<lonA && latB<latA) {angleout=180+anglemajeur} 
 		else {angleout=360-anglemajeur};
-		// window.alert("on a un angle majeur de "+anglemajeur);
 	return angleout;
 };
-
 // FR: caracterisation des POI par rapport au point d'observation
 // EN: characteristics of the POI depending on observation point
 function POIAroundObs(unobspoint,despoi,unrayonmin=0,unrayonmax=10){
-	 //window.alert("despoi a une longueur de "+despoi.features.length);
 	despoi.features.forEach(function(unpoi){
 		const lepct=pctAboveHorizon(unobspoint,unpoi,unpoi.properties.poiheight);
 		const langle=Math.floor(angleAzimut(unobspoint,unpoi.geometry.coordinates));
-		const ladist=distance(unobspoint,unpoi.geometry.coordinates);
-		// window.alert("on voit "+lepct+" sur azimut de "+langle+" a une distance de "+ladist);
-		if(ladist>unrayonmin && ladist<unrayonmax){
 			unpoi.properties.angle=langle;
 			unpoi.properties.pctvisible=lepct;
-						}});
-	// window.alert(JSON.stringify(despoi));
+						});
 	return despoi;
 };
 // FR: remplissage du cercle autour du point d'observation
@@ -234,42 +250,19 @@ function POIAroundObs(unobspoint,despoi,unrayonmin=0,unrayonmax=10){
 // with the number of visible poi related to each degree
 function computeStatCircle(unobspoint,despoi,unrayon){
 const lecercle={'type': 'FeatureCollection','features':[]}; // debut du geojson du cercle
-// window.alert("0despoivaut "+JSON.stringify(despoi));
 let letableau=POIAroundObs(unobspoint,despoi); // en fait, despoi est aussi mis à jour
-// window.alert("1despoivaut "+JSON.stringify(despoi));
-// pour filter, voir https://www.freecodecamp.org/news/javascript-array-filter-tutorial-how-to-iterate-through-elements-in-an-array/
-// autre possibilite : let test = wtf.features.filter(([key, value]) => key.endsWith('A'))
-<!-- let test = letableau.features.filter(item => item.properties.angle == 64 & item.properties.pctvisible > 0.1); -->
-<!-- window.alert("7."+test.length); -->
-	<!-- let tableau=Array(360).fill(0); // initialisation du tableau -->
-	<!-- despoi.forEach(function(unpoi){ -->
-	<!-- // window.alert(unpoi.angle);  // YESSSS IT WORKS -->
-	<!-- const langle=Math.floor(angle(unobspoint,unpoi.geometry.coordinates)); -->
-	<!-- const ladist=distance(unobspoint,unpoi.geometry.coordinates); -->
-	<!-- // window.alert("on va dans la case "+langle+" sur le point "+unpoi.geometry.coordinates); -->
-	<!-- if(ladist>unrayonmin & ladist<unrayonmax){tableau[langle]+=1;}; -->
-	<!-- // window.alert("la valeur du tableau "+tableau[langle]); -->
-					<!-- }); -->
-	<!-- return tableau; -->
 	for (let i = 0; i < 360; i++) {
-// on cree la surface à colorier
-<!-- // if (i % 90 == 0){window.alert("C'est la boucle "+i);}; // un message tous les 90 -->
-		
 		lecercle.features[i]=JSON.parse('{"type": "Feature",'+
 										' "properties": {"poivisible": "'+
 										letableau.features.filter(item => item.properties.angle == i && item.properties.pctvisible > 0.1).length
-										<!-- letableau.features.filter(item => item.properties.angle == i).length -->
 										+'", "azimut" : "' + i
 										+'" },'+
 										' "geometry": {"type": "Polygon", "coordinates": [[['+
 							coordcercle(unobspoint,unrayon-0.1,i)+'],['+coordcercle(unobspoint,unrayon+0.1,i)+'],['+coordcercle(unobspoint,unrayon+0.1,i+1)+'],['+coordcercle(unobspoint,unrayon-0.1,i+1)+
 							']]]}}');
 	};
-	// window.alert("C'est la cercle "+JSON.stringify(lecercle));
-	// window.alert("Dans le tableau, il y a "+JSON.stringify(letableau));
 	return lecercle;
 };	
-
 // dessin des emprises visuelles à partir du point de vue
 // draw the poi groups from observation point
 function poiGroupings(unobspoint,despoi,unrayon){
@@ -277,10 +270,8 @@ function poiGroupings(unobspoint,despoi,unrayon){
 	let lescouleurs=[];
 	let lesmins=[];
 	let lesmaxs=[];
-	// window.alert("0.on a un nbpoi egal a "+despoi.features.length+"!");
 	despoi.features.forEach(function(unpoi,index){
 		let loopnb=index+1;
-		// window.alert("1.boucle sur :"+loopnb);
 		if(loopnb==despoi.features.length)
 			{
 			document.getElementById('loadingign').innerHTML="";
@@ -291,7 +282,6 @@ function poiGroupings(unobspoint,despoi,unrayon){
 			};
 		let laprop=unpoi.properties.poigroup;
 		let lazimut=angleAzimut(unobspoint,unpoi.geometry.coordinates);
-		// window.alert("1.boucle sur :"+laprop);
 			if(lesgroupes.filter(item => item == laprop ).length==0){     // si on initialise le groupe
 			lesgroupes.push(laprop);
 			lescouleurs[lesgroupes.indexOf(laprop)]=colorGenerator();
@@ -301,16 +291,15 @@ function poiGroupings(unobspoint,despoi,unrayon){
 			}
 			else{				// si le groupe existe deja
 			// on cherche dans le demi-plan après 180+lesmins
-			// if(lazimut>180+lesmins[lesgroupes.indexOf(laprop)]){lesmins[lesgroupes.indexOf(laprop)]=lazimut-360};
 			if(lazimut<lesmins[lesgroupes.indexOf(laprop)]){lesmins[lesgroupes.indexOf(laprop)]=lazimut;};
 			if(lazimut>lesmaxs[lesgroupes.indexOf(laprop)]){lesmaxs[lesgroupes.indexOf(laprop)]=lazimut};
 			unpoi.properties.lacouleur=lescouleurs[lesgroupes.indexOf(laprop)];			
 			}
-	});
+	}); // fin de la boucle sur les POIs
 	let lesecarts=[];
 	for(let k=0;k<lesmaxs.length;k++){
 		lesecarts[k]=lesmaxs[k]-lesmins[k];
-		if(lesecarts[k]>180){
+		if(lesecarts[k]>180){ // si on couvre plus d'un demi-cercle, on calcule autrement min et max
 				let onepark=despoi.features.filter(item=>item.properties.poigroup==lesgroupes[k]);
 				let oneparkright=0;
 				let oneparkleft=360;
@@ -321,42 +310,17 @@ function poiGroupings(unobspoint,despoi,unrayon){
 				lesmins[k]=oneparkleft;
 				}
 				)
-			window.alert("je recupere a gauche /"+oneparkleft+"/ a droite /"+oneparkright+"avec"+JSON.stringify(onepark));
 			};
-			// let totomin=Math.min(toto.features.properties.angle);
 		};
-
-	// let toto = Object.values(despoi.features).properties.poigroup;
-	// window.alert("2.boucle sur :"+lesgroupes);
-	<!-- window.alert("2.Parc 2 min/max :"+lesmins[lesgroupes.indexOf("Parc 2")]+"/"+lesmaxs[lesgroupes.indexOf("Parc 2")]); -->
-	<!-- function onlyUnique(value, index, self) {  -->
-		<!-- return self.indexOf(value) === index; -->
-	<!-- }; -->
-	// window.alert("boucle sur :"+despoi.features);
-	<!-- lesgroupes=despoi.features.filter( (value, index, self) => self.properties.poigroup.indexOf(value) === properties.poigroup.index ); -->
-
-<!-- // usage example: -->
-<!-- var a = ['a', 1, 'a', 2, '1']; -->
-<!-- var unique = a.filter( onlyUnique ); -->
-	<!-- window.alert("lesgroupes: "+lesgroupes); -->
-const larcdecercle={'type': 'FeatureCollection','features':[]}; // debut du geojson du secteur
+	document.getElementById('nbpoigroup').innerHTML =lesgroupes.length;
+	// creation du secteur du groupe de POIs a partir des min et max precedents
+	const larcdecercle={'type': 'FeatureCollection','features':[]}; // debut du geojson du secteur
 	lesgroupes.forEach(function(ungroupe){
-		lesgroupes.indexOf(ungroupe);
-		// window.alert("Le groupe :"+ungroupe+" a un index "+lesgroupes.indexOf(ungroupe)+"avec un min/max :"+
-		// lesmins[lesgroupes.indexOf(ungroupe)]+"/"+lesmaxs[lesgroupes.indexOf(ungroupe)]
-		// );
-		<!-- larcdecercle.features[lesgroupes.indexOf(ungroupe)]=JSON.parse('{"type": "Feature",'+ -->
-										<!-- ' "properties": {"poigroup": "'+ ungroupe +'"},'+ -->
-										<!-- ' "geometry": {"type": "Polygon", "coordinates": [[['+ -->
-							<!-- unobspoint+'],['+coordcercle(unobspoint,unrayon-0.1,lesmaxs[lesgroupes.indexOf(ungroupe)])+ -->
-							<!-- '],['+coordcercle(unobspoint,unrayon-0.1,lesmins[lesgroupes.indexOf(ungroupe)])+ -->
-							<!-- ']]]}}');	 -->
 		let lechemindarc= "";
 		if(lesmins[lesgroupes.indexOf(ungroupe)]>lesmaxs[lesgroupes.indexOf(ungroupe)]){lesmins[lesgroupes.indexOf(ungroupe)]=lesmins[lesgroupes.indexOf(ungroupe)]-360}
 		for(let k=Math.floor(lesmins[lesgroupes.indexOf(ungroupe)]);k<lesmaxs[lesgroupes.indexOf(ungroupe)]+1;k++){
 			lechemindarc=lechemindarc+'],['+coordcercle(unobspoint,unrayon-0.1,k);
 			};
-		// window.alert("lechemindarc"+lechemindarc);	
 		larcdecercle.features[lesgroupes.indexOf(ungroupe)]=JSON.parse('{"type": "Feature",'+ 
 							' "properties": {"poigroup": "'+ungroupe+'", "color": "'+lescouleurs[lesgroupes.indexOf(ungroupe)]+'"},'+
 							'"geometry": {"type": "Polygon", "coordinates": [[['+
@@ -366,59 +330,46 @@ const larcdecercle={'type': 'FeatureCollection','features':[]}; // debut du geoj
 							);
 	}
 	);
-	// window.alert(JSON.stringify(larcdecercle.features[0]));
 	return larcdecercle;
 };
 
-
-
+// FR: dessin de la carte a partir des 3 geojson
+// EN: draw the map given 3 geojson
 function drawMap(obs_point,a_geojson,a_circle,some_sectors){
-<!-- document.getElementById('cercle').innerHTML =JSON.stringify(a_circle); -->
-<!-- const lemaxpoivisible = -1; -->
-<!-- window.alert("Le max de poivisible est :"+a_circle.features.forEach( -->
-			<!-- item => { -->
-				<!-- lemaxpoivisible=Math.max(item.properties.poivisible,lemaxpoivisible); -->
-				<!-- return lemaxpoivisible; -->
-<!-- })); -->
-
-
 	var map = new maplibregl.Map({
 	container: 'map', // container id
 	// style: 'https://demotiles.maplibre.org/style.json', // style URL
 	style: 'https://geoserveis.icgc.cat/contextmaps/osm-bright.json',
 	center: obs_point, // starting position [lng, lat]
-	zoom: 11// starting zoom = 1 mais on prend 10
+	zoom: 11// starting zoom = 1 mais on prend 11
 	});
 	var here_marker = new maplibregl.Marker()
 	.setLngLat(obs_point)
-	.addTo(map);
+	.addTo(map);             // definition du marker et ajout a la carte
 	map.doubleClickZoom.disable(); // on utilise le dblclick pour recentrer la carte
-	// window.alert(JSON.stringify(a_circle));
-	window.alert("la description de tous les poi :"+JSON.stringify(a_geojson));
-		map.on('load', function () {
+	map.on('load', function () {
+				// ungeojson est une variable globale avec tous les poi
+				map.addSource('touslespoi', {
+					'type': 'geojson',
+					'data': ungeojson
+					});	
+				// a_circle est une variable locale avec la roue
 				map.addSource('lecercle', {
 						'type': 'geojson',
 						'data': a_circle
 					});
+				// a_geojson est une variable locale avec les pois selectionnes
 				map.addSource('poisubset', {
 						'type': 'geojson',
 						'data': a_geojson
 					});	
-				map.addSource('touslespoi', {
-						'type': 'geojson',
-						'data': ungeojson
-					});	
-				<!-- map.setPaintProperty('building', 'fill-color', [ -->
-					<!-- ['zoom'], -->
-					<!-- 15, -->
-					<!-- '#e2714b', -->
-					<!-- 22, -->
-					<!-- '#eee695' -->
-					<!-- ]); -->
+				// some_sectors est une variable locale avec les parcs
 				map.addSource('lesarcs', {
 						'type': 'geojson',
 						'data': some_sectors
 					});	
+
+				// couche ou tous les POIs sont en gris
 				map.addLayer({
 						'id': 'touslespoi',
 						'type': 'circle',
@@ -429,6 +380,8 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 					"circle-stroke-color": "black",
 						}
 					});	
+				// couche avec les eoliennes dans le rayon d'observation
+				// elles sont coloriees en rouge
 				map.addLayer({
 						'id': 'visiblepoisubset',
 						'type': 'circle',
@@ -439,16 +392,7 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 							"circle-stroke-color": "red"
 						}
 					});	
-				<!-- map.addLayer({ -->
-						<!-- 'id': 'invisiblepoisubset', -->
-						<!-- 'type': 'circle', -->
-						<!-- 'source': 'poisubset', -->
-						<!-- 'paint': { -->
-					<!-- "circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)", -->
-					<!-- "circle-stroke-width": 1.5, -->
-					<!-- "circle-stroke-color": "green"}, -->
-						<!-- 'filter': ['<', 'pctvisible', '0.1'] -->
-					<!-- }); -->
+				// couche avec les parcs en couleur
 				map.addLayer({
 						'id': 'lesarcs',
 						'type': 'fill',
@@ -458,7 +402,9 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 							'fill-color': ["get","color"],  // le code à 3 caractères #abc est en fait un raccourci du code hexa "doublé" #aabbcc
 							'fill-opacity': 0.8
 							}
-					});		
+					});
+				// couche avec la roue de visibilite
+				// avec les slots occupes ou libres
 				map.addLayer({
 						'id': 'leslibres',
 						'type': 'fill',
@@ -468,10 +414,8 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 							'fill-color': '#088',  // le code à 3 caractères #abc est en fait un raccourci du code hexa "doublé" #aabbcc
 							'fill-opacity': 0.8
 						},
-						'filter': ['==', 'poivisible', '0']
+						'filter': ['<', 'poivisible', '0.1']
 					});
-						<!-- 'filter': ['==', '["get", "nbpoi"]', '0'] -->
-					
 				map.addLayer({
 						'id': 'lesoccupes',
 						'type': 'fill',
@@ -485,239 +429,102 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 					});
 
 			});
-			map.on('click', 'lesarcs', function (e) {
-					var coordinates = e.lngLat.toArray();
-					var description = e.features[0].properties.poigroup;
-					 
-					// Ensure that if the map is zoomed out such that multiple
-					// copies of the feature are visible, the popup appears
-					// over the copy being pointed to.
-					while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-					coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-					}
-					 
-					new maplibregl.Popup()
-					.setLngLat(coordinates)
-					.setHTML(description)
-					.addTo(map);
-					});
+			
+			
+			// les fonctions sur la carte
+			//           dblclick pour changer de lieu
+			//           touchend pour changer de lieu sur tablette
+			//           mouseover/mouseleave pour popup nom parc
+			//           mouseover/mouseleave pour popup descr POI
+			//           affichage des coordonnees du pointeur
+			let touchmove_popup = new maplibregl.Popup({
+					closeButton: false,
+					closeOnClick: false
+				});
 			map.on('dblclick', function (e) {
-					let changePage=window.confirm("Voulez-vous centrer la carte sur ce point"+e.lngLat.toArray()+"?")
-						if(changePage==true){
-						let obs_point=e.lngLat.toArray();
-						let poi_vector={'type': 'FeatureCollection','features':[]};;
-						// window.alert("dblclick:"+obs_point);
-						ungeojson.features.forEach(function(onemore){
-						if(distance(obs_point,onemore.geometry.coordinates)<theradius){
-							poi_vector.features.push(onemore);
-							};
-						});
-						window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
-						let thedata=computeStatCircle(obs_point,poi_vector,5)
-						let thesectors=poiGroupings(obs_point,poi_vector,5)
-						window.alert("dblclick:"+JSON.stringify(thesectors));
-						map.getSource('touslespoi').setData(poi_vector);
-						map.getSource('lecercle').setData(thedata);
-						map.getSource('lesarcs').setData(thesectors);
-						map.setZoom(11);
-						here_marker.setLngLat(obs_point);
-						// map.removeSource();
-						} // fin de la confirmation
+				let coordinates = e.lngLat.toArray();
+				urlParams.set('lon',coordinates[0]);
+				urlParams.set('lat',coordinates[1]);
+				let description='<strong>Cliquer dessous pour recentrer</strong><BR/>'+
+								'<a href="'+window.location.pathname+'?'+urlParams+'">Recentrer sur ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>';
+								// <a href="https://fr.w3docs.com/">W3Docs.com</a>
+				touchmove_popup.setLngLat(coordinates).setHTML(description).addTo(map);
+		
 					});
 			map.on('touchend', function (e) {
-					let changePage=window.confirm("Voulez-vous centrer la carte sur ce point"+e.lngLat.toArray()+"?")
-						if(changePage==true){
-						let obs_point=e.lngLat.toArray();
-						let poi_vector={'type': 'FeatureCollection','features':[]};;
-						// window.alert("dblclick:"+obs_point);
-						ungeojson.features.forEach(function(onemore){
-						if(distance(obs_point,onemore.geometry.coordinates)<theradius){
-							poi_vector.features.push(onemore);
-							};
-						});
-						// window.alert("dblclick: longueur "+poi_vector.features.length+"/"+JSON.stringify(poi_vector));
-						let thedata=computeStatCircle(obs_point,poi_vector,5)
-						let thesectors=poiGroupings(obs_point,poi_vector,5)
-						// window.alert("touchend:"+JSON.stringify(thesectors));
-						map.getSource('touslespoi').setData(poi_vector);
-						map.getSource('lecercle').setData(thedata);
-						map.getSource('lesarcs').setData(thesectors);
-						map.setZoom(11);
-						here_marker.setLngLat(obs_point);
-						// map.removeSource();
-						} // fin de la confirmation
-					});
-					// Change the cursor to a pointer when the mouse is over the places layer.
-			map.on('mouseenter', 'lesarcs', function () {
-					map.getCanvas().style.cursor = 'pointer';
-							});
-					// Change it back to a pointer when it leaves.
-			map.on('mouseleave', 'lesarcs', function () {
-					map.getCanvas().style.cursor = '';
+				let coordinates = e.lngLat.toArray();
+				urlParams.set('lon',coordinates[0]);
+				urlParams.set('lat',coordinates[1]);
+				let description='<strong>Cliquer dessous pour recentrer</strong><BR/>'+
+								'<a href="'+window.location.pathname+'?'+urlParams+'">Recentrer sur ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>';
+								// <a href="https://fr.w3docs.com/">W3Docs.com</a>
+				touchmove_popup.setLngLat(coordinates).setHTML(description).addTo(map);
+		
 					});
 			let poi_popup = new maplibregl.Popup({
 					closeButton: false,
 					closeOnClick: false
 				});
+			// popup description POI
 			map.on('mouseover', 'touslespoi', function(e) {
 				map.getCanvas().style.cursor = 'pointer';
 				let coordinates = e.features[0].geometry.coordinates.slice();
-				// let description = e.features[0].properties.description;
 				let description='<strong>'+e.features[0].properties.NOM_PARC+'</strong><BR/>'+
 								'Eolienne : '+e.features[0].properties.NUMERO+'<BR/>'+
 								'Hauteur : '+e.features[0].properties.HT_MAX+'<BR/>'+
 								'dont visible : '+Math.round(1000*e.features[0].properties.pctvisible)/10+' %<BR/>'+
 								'Statut : '+e.features[0].properties.LEG_MAT;
 				poi_popup.setLngLat(coordinates).setHTML(description).addTo(map);
-					// console.log('A mouseover event has occurred on a visible portion of the poi-label layer.');
 			});
 			map.on('mouseleave', 'touslespoi', function () {
 				map.getCanvas().style.cursor = '';
 				poi_popup.remove();
 			});
+			// suivi du pointeur
 			map.on('mousemove', function (e) {
 			let x=Math.round(1000*e.lngLat.lng)/1000;
 			let y=Math.round(1000*e.lngLat.lat)/1000;
 			document.getElementById('info').innerHTML =
-			// e.point is the x, y coordinates of the mousemove event relative
-			// to the top-left corner of the map
-			  // JSON.stringify(e.point) + '<br />' +
-			// e.lngLat is the longitude, latitude geographical position of the event
-			// JSON.stringify(e.lngLat.wrap());
+
 			"longitude :"+x+" et latitude :"+y;
 				});	
-
-};
-
-function maj_radius(){
-// mettre a jour le texte du rayon
-let radius=document.getElementById('rangeElement').value;
-document.getElementById('radius').innerHTML = radius	;
-// lancer la mise a jour du cercle
-  poi_vector={'type': 'FeatureCollection','features':[]};;
-	allpois.features.forEach(function(oneitem){
-	if(oneitem.properties.poidistance<radius){
-	poi_vector.features.push(oneitem);}
-	});
-	drawMap(obs_point,poi_vector,a_circle=computeStatCircle(obs_point,poi_vector,5),some_sectors=poiGroupings(obs_point,poi_vector,5)) ;
-// window.alert("on est dans la mise à jour avec un rayon de "+radius);
 };
 // FIN DES FONCTIONS
 
-const obs_point = [4.2261, 47.6675]; 
+let urlParams = new URL(window.location.toLocaleString()).searchParams;
+// a priori on a pas besoin de tester l'absence de parametres car on les ajoute s'il n'existe pas
+// let nbparam=Array.from(urlParams).length;
+// if(nbparam==0){
+if(urlParams.has('lat')==false){urlParams.set('lat',47.6675);}   // default lat for obspoint
+if(urlParams.has('lon')==false){urlParams.set('lon',4.2261) ;}     // default lon for obspoint
+if(urlParams.has('radius')==false){urlParams.set('radius',10);}  // default radius for poi : 10 km 
+if(urlParams.has('poitype')==false){urlParams.set('poitype','CAI');}  // default radius for poi : 10 km 
+if(urlParams.has('wheel')==false){urlParams.set('wheel',5);}     // default radius for wheel : 5 km 
+if(window.location.href.indexOf(urlParams)<0){window.location.assign(window.location.pathname+"?"+urlParams);}
+//	}
+		if(urlParams.get('poitype').indexOf("C")>=0){choixconstr.checked=true};
+		if(urlParams.get('poitype').indexOf("A")>=0){choixaccord.checked=true};
+		if(urlParams.get('poitype').indexOf("I")>=0){choixinstr.checked=true};
+		if(urlParams.get('poitype').indexOf("R")>=0){choixrefus.checked=true};
+
 // FR:le point d'observation - EN:observation point  AISY [4.2261, 47.6683]
 // Aisy dans wikidata 47.6675, 4.225278
+// const obs_point = [4.2261, 47.6675];
+const obs_point = [ parseFloat(urlParams.get('lon')), parseFloat(urlParams.get('lat')) ];
+let selectedtype = urlParams.get('poitype');
+let theradius = parseFloat(urlParams.get('radius'));
+let wheel = parseFloat(urlParams.get('wheel'));
+// TEST window.alert("l'url est : "+window.location.toLocaleString()+"!");
+// TEST les paramètres sont ?lon=4.2261&lat=47.6675
+	
 // FR:ensemble des donnees des POI au format geojson avec coordonnees longitude puis latitude
-// EN:POI data in geojson format with coordinates in lonLat format
-// TODO: lecture d'un fichier geojson ou csv fourni par le client
-
-// const data = require('./eolienne_bfc.json');
-// console.log(data);
-
-// fetch("./eolienne_bfc.json")
-// step 1
-//.then(response => {
-//   return response.json();
-//})
-// step 2
-/*.then(data => data.features.forEach(function(unpoi){
-	if (unpoi.properties["LEG_MAT"] == "construite","accordée"){window.alert("une eolienne lue");};
-	}))*/
-// step 3
-//.then(data => window.alert("enbfc "+data));
-//.then(data => const poi_vector = data);
-// window.alert("lepremierpoiest"+poi_vector[0]);
-// poigroup
-
-/* const poi_vector = {
-'type': 'FeatureCollection',
-'features': [
-{
-'type': 'Feature',
-'properties': {
-'poigroup': 'Parc 3',
-'poiheight': 120 
-},
-'geometry': {
-'type': 'Point',
-'coordinates': [4.2661, 47.6683]
-}
-},
-{
-'type': 'Feature',
-'properties': {
-'poigroup': 'Parc 1',
-'poiheight': 120 
-},
-'geometry': {
-'type': 'Point',
-'coordinates': [4.2661, 47.62361183]
-}
-},
-{
-'type': 'Feature',
-'properties': {
-'poigroup': 'Parc 1',
-'poiheight': 150 
-},
-'geometry': {
-'type': 'Point',
-'coordinates': [4.337778, 47.623611]
-}
-},
-{
-'type': 'Feature',
-'properties': {
-'poigroup': 'Parc 2',
-'poiheight': 150 
-},
-'geometry': {
-'type': 'Point',
-'coordinates': [4.3, 47.7]
-}
-},
-{
-'type': 'Feature',
-'properties': {
-'poigroup': 'Parc 2',
-'poiheight': 150 
-},
-'geometry': {
-'type': 'Point',
-'coordinates': [4.337778, 47.703611]
-}
-}
-]
-};
- */
- // fin du fichier geojson - end of geojson file
-
-// window.alert(JSON.stringify(POIAroundObs(obs_point,poi_vector,unrayonmin=0,unrayonmax=10)));
-// computeStatCircle(obs_point,poi_vector);
-// poiGroupings(obs_point,poi_vector,5);
-// uneurl="https://trouver.ternum-bfc.fr/dataset/823e3d64-cd5c-4b0d-bf52-db8036e7f5bd/resource/7d4e3b72-0ac2-4596-b3e0-29deffef8614/service_proxy?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=n_mat_eolien_p_r27_97e1489&OUTPUTFORMAT=geojson&CRSNAME=EPSG:4326";
-
-
-
-	let range = document.getElementById('rangeElement');
-		range.addEventListener('change', function(){
-			document.getElementById('radiuschange').innerHTML = range.value	;
-			//document.getElementById('form_radiuschange').removeChild('maj_btn');
-		if(document.getElementById('maj_btn') == null){
-		let maj_btn=document.createElement("INPUT");
-		  maj_btn.setAttribute("type", "button");		  
-		  maj_btn.setAttribute("id", "maj_btn");
-		  maj_btn.setAttribute("value", "Mettre à jour");
-		  maj_btn.setAttribute("onclick", "maj_radius("+")");
-		  document.getElementById('form_radiuschange').appendChild(maj_btn);
-		}});
-		<!-- range.addEventListener('mouseout', function(){ -->
-		  <!-- range.value = '50'; -->
-		<!-- }); -->
-		
-let theradius=10;		
+// EN:POI data in geojson format with coordinates in lonLat format	
 let uneurl="./eolienne_bfc.json";
 let ungeojson;  // on definit ungeojson en variable globale pour le (re)utiliser à différents moments
+	
+// INITIALISATION : LECTURE DES DONNEES ET CHARGEMENT DE LA CARTE
+document.getElementById("radiuschange").innerHTML=theradius;
+document.getElementById("rangeElement").value=theradius;		
 unereponse=fetch(uneurl)
 // step 1
 .then(response => {
@@ -727,43 +534,42 @@ unereponse=fetch(uneurl)
 .then(data => {
   allpois={'type': 'FeatureCollection','features':[]};
   poi_vector={'type': 'FeatureCollection','features':[]};;
-  // window.alert("dans le fichier, on a "+Object.keys(data.features).length+" elements");
   data.features.forEach(function(unpoi){
-	if (unpoi.properties["LEG_MAT"] == "construite"){
+	if (unpoi.properties["LEG_MAT"] == "construite" & selectedtype.indexOf('C')>=0 ){
 											unpoi.properties.poigroup=unpoi.properties["NOM_PARC"];
 											unpoi.properties.poiheight=unpoi.properties["HT_MAX"];
 											unpoi.properties.poidistance=distance(obs_point,unpoi.geometry.coordinates);
 											allpois.features.push(unpoi);};
-	if (unpoi.properties["LEG_MAT"] == "accordée"){
+	if (unpoi.properties["LEG_MAT"] == "accordée" & selectedtype.indexOf('A')>=0 ){
+											unpoi.properties.poigroup=unpoi.properties["NOM_PARC"];
+											unpoi.properties.poiheight=unpoi.properties["HT_MAX"];
+											unpoi.properties.poidistance=distance(obs_point,unpoi.geometry.coordinates);
+											allpois.features.push(unpoi);};
+	if (unpoi.properties["LEG_MAT"] == "en instruction" & selectedtype.indexOf('I')>=0 ){
+											unpoi.properties.poigroup=unpoi.properties["NOM_PARC"];
+											unpoi.properties.poiheight=unpoi.properties["HT_MAX"];
+											unpoi.properties.poidistance=distance(obs_point,unpoi.geometry.coordinates);
+											allpois.features.push(unpoi);};
+	if (unpoi.properties["LEG_MAT"] == "refusée" & selectedtype.indexOf('R')>=0 ){
 											unpoi.properties.poigroup=unpoi.properties["NOM_PARC"];
 											unpoi.properties.poiheight=unpoi.properties["HT_MAX"];
 											unpoi.properties.poidistance=distance(obs_point,unpoi.geometry.coordinates);
 											allpois.features.push(unpoi);};
 	});
 	ungeojson=allpois;
+	// FR: Selection des points conserves pour analyse // EN: select pois to be kept for further analysis
 	allpois.features.forEach(function(oneitem){
-	if(oneitem.properties.poidistance<theradius){
-	poi_vector.features.push(oneitem);}
-	});
-	// let poi_vector.features=allpois.filter(item => item.properties.poidistance<10);	
-	// window.alert("on va regarder sur "+poi_vector.featureslength+" poi");
-	// window.alert("poi_vector vaut "+JSON.stringify(poi_vector));
+			if(oneitem.properties.poidistance<theradius){
+			poi_vector.features.push(oneitem);}
+			});
+	document.getElementById('nbpoi').innerHTML=poi_vector.features.length;
 	return poi_vector;
 	}) // fin du .then(data
 .then( datum => {
-// window.alert("Les secteurs, ca donne entre @@, @@"+JSON.stringify(poiGroupings(obs_point,datum,5))+"@@")
-drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,5),some_sectors=poiGroupings(obs_point,datum,5)) ;
-
-// window.alert("on a tout lu soit:"+Object.keys(datum.features).length+"!");
-}
-) // fin du .then(datum
-
-	;
+	drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,wheel),some_sectors=poiGroupings(obs_point,datum,wheel)) ;
+	}); // fin du .then(datum
 // fin du fetch	
 
-// drawMap(obs_point,a_geojson=poi_vector,a_circle=computeStatCircle(obs_point,poi_vector,5),some_sectors=poiGroupings(obs_point,poi_vector,5)) // obs_point,a_geojson,a_circle,some_sectors
-
-// TODO : ajouter les hauteurs et les éclairages de relief (hillshade)
 </script>
 </body>
 </html>
