@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <title>Répartition des objets autour d'un point</title>
 <!-- meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" /-->
-<script src="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.js"></script>
-<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
 <style>
 	<!-- body { margin: 0; padding: 0; } -->
 	<!-- #bandeauhaut { height:10%; width: 100%; } -->
@@ -56,11 +56,50 @@
   border-radius: 50%;
 } 
 
+/* Position the menu on the map */
+    .menu {
+     position: absolute;
+     top: 10px;
+     right: 30px;
+     width: 180px;
+	 height: 180px;
+     background-color: #FFFFFF;
+     opacity: 0.89;
+     color: #000000;
+     font: 13px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+     padding:10;
+}
 </style>
 
-<div id="map" class="split maptop">
-<!-- Partie occupee par la carte -->
-</div>
+	<div id="map" class="split maptop">
+	<!-- Partie occupee par la carte -->
+	</div>
+	<div class='split maptop menu'>
+	<!-- Choix des couches a afficher -->
+	<label class="categoryLabel"><B>Eoliennes</B></label>
+			<br>
+		 <!-- <input type="checkbox" id="lesarcs" value="lesarcs" onchange="switchLayer('lesarcs')" /> -->
+		<input type="checkbox" id="lesarcs" value="lesarcs" checked />
+		<label for="lesarcs">Emprise des parcs</label>
+			<br>
+		<input type="checkbox" id="laroue" value="laroue" checked />
+		<label for="laroue">La roue à 5 km</label>
+			  <hr> <!-- ligne de separation horizontale -->
+	<label class="categoryLabel"><B>Fonds</B></label>
+				<br>
+		<input type="checkbox" id="lesaeriens" value="lesaeriens"  />
+		<label for="lesaeriens">Photos aériennes</label>
+				<br>
+		<input type="checkbox" id="lerelief" value="lerelief" />
+		<label for="lerelief">Relief</label>
+				<br>
+		<input type="checkbox" id="lesombres" value="lesombres" />
+		<label for="lesombres">Ombres du relief</label>
+				<br>
+		<input type="checkbox" id="lesaltitudes" value="lesaltitudes" />
+		<label for="lesaltitudes">Courbes de niveaux</label>
+	</div>
+
 <div id="footer" class="split ctrlbottom">
 	<!-- Fonction 0 : temporisation / lazy loading -->
 	<div id="loadingign" >
@@ -140,6 +179,17 @@ function MAJaction(elem){
 		document.getElementById('cautionnewparam').removeChild(elem);
 		window.location.assign(window.location.pathname+"?"+urlParams);
 	};
+	
+<!-- function switchLayer(layername) { -->
+			<!-- window.alert("on essaie de :"+map.getLayoutProperty(layername,'visibility')); -->
+            <!-- if (document.getElementById(layername).checked) { -->
+                <!-- map.setLayoutProperty(layername, 'visibility', 'visible'); -->
+            <!-- } else { -->
+                <!-- map.setLayoutProperty(layername, 'visibility', 'none'); -->
+           <!-- } -->
+    <!-- }; -->
+
+	
 // FR: Premiere etape => fonctions unitaires pour chaque POI
 // EN: First step => simple functions to be used for each POI
 
@@ -341,8 +391,11 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 	// style: 'https://demotiles.maplibre.org/style.json', // style URL
 	style: 'https://geoserveis.icgc.cat/contextmaps/osm-bright.json',
 	center: obs_point, // starting position [lng, lat]
-	zoom: 11// starting zoom = 1 mais on prend 11
+	zoom: 11 // starting zoom = 1 mais on prend 11
 	});
+	map.addControl(new maplibregl.AttributionControl({
+customAttribution: "IGN"
+}), 'top-left');
 	var here_marker = new maplibregl.Marker()
 	.setLngLat(obs_point)
 	.addTo(map);             // definition du marker et ajout a la carte
@@ -368,7 +421,37 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						'type': 'geojson',
 						'data': some_sectors
 					});	
-
+				// les courbes de niveau IGN
+				map.addSource('lesaltitudes', {
+						'type': 'raster',
+						'tiles': [
+						'https://wxs.ign.fr/altimetrie/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ELEVATION.CONTOUR.LINE&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&STYLE=normal&FORMAT=image/png'
+						],
+						'tileSize': 256
+					});
+				// le relief IGN
+				map.addSource('lesombres', {
+						'type': 'raster',
+						'tiles': [
+						'https://wxs.ign.fr/altimetrie/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ELEVATION.ELEVATIONGRIDCOVERAGE.SHADOW&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&STYLE=estompage_grayscale&FORMAT=image/png'
+						],
+						'tileSize': 256
+					});
+				map.addSource('lerelief', {
+						'type': 'raster',
+						'tiles': [
+						'https://wxs.ign.fr/altimetrie/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ELEVATION.SLOPES&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&STYLE=normal&FORMAT=image/jpeg'
+						],
+						'tileSize': 256
+					});
+				// les photos aeriennes IGN
+				map.addSource('lesaeriens', {
+						'type': 'raster',
+						'tiles': [
+						'https://wxs.ign.fr/ortho/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}&STYLE=normal&FORMAT=image/jpeg'
+						],
+						'tileSize': 256
+					});
 				// couche ou tous les POIs sont en gris
 				map.addLayer({
 						'id': 'touslespoi',
@@ -378,7 +461,8 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 					"circle-color": "grey",// "circle-color": "hsla(0,0%,0%,0.75)",
 					"circle-stroke-width": 1.5,
 					"circle-stroke-color": "black",
-						}
+						},
+							'attribution': 'Tuiles/tiles : IGN &  Institut Cartogràfic i Geològic de Catalunya'
 					});	
 				// couche avec les eoliennes dans le rayon d'observation
 				// elles sont coloriees en rouge
@@ -427,10 +511,84 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 						},
 						'filter': ['>=', 'poivisible', '0.1']
 					});
-
+				// les couches issues IGN
+				map.addLayer({
+						'id': 'lesaltitudes',
+						'type': 'raster',
+						'source': 'lesaltitudes',
+						'layout': {'visibility': 'none'},
+						'paint': {}
+					});
+				map.addLayer({
+						'id': 'lesombres',
+						'type': 'raster',
+						'source': 'lesombres',
+						'layout': {'visibility': 'none'},
+						'paint': {}
+					});
+				map.addLayer({
+						'id': 'lesaeriens',
+						'type': 'raster',
+						'source': 'lesaeriens',
+						'layout': {'visibility': 'none'},
+						'paint': {}
+					});
+				map.addLayer({
+						'id': 'lerelief',
+						'type': 'raster',
+						'source': 'lerelief',
+						'paint' : {
+							'raster-opacity' : 0.1 //.setPaintProperty(layerId, 'raster-opacity', Number(event.target.value / 100));
+						},
+						'layout': {'visibility': 'none'},
+						'paint': {}
+					});
 			});
-			
-			
+			// 
+			document.getElementById('lesarcs').addEventListener('change', function (event) {
+				let lesarcs_checked = event.target.checked;
+				if(lesarcs_checked == true){map.setLayoutProperty('lesarcs', 'visibility', 'visible')}
+				else {map.setLayoutProperty('lesarcs', 'visibility', 'none')};
+				});
+			document.getElementById('laroue').addEventListener('change', function (event) {
+				let laroue_checked = event.target.checked;
+				if(laroue_checked == true){
+					map.setLayoutProperty('lesoccupes', 'visibility', 'visible');
+					map.setLayoutProperty('leslibres', 'visibility', 'visible');
+					}
+				else {
+					map.setLayoutProperty('lesoccupes', 'visibility', 'none');
+					map.setLayoutProperty('leslibres', 'visibility', 'none');					};
+				});
+
+			document.getElementById('lesaeriens').addEventListener('change', function (event) {
+				let lesarcs_checked = event.target.checked;
+				if(lesarcs_checked == true){
+					map.setLayoutProperty('lesaeriens', 'visibility', 'visible');
+					map.setPaintProperty('lesaeriens', 'raster-opacity', 0.3);
+					}
+				else {map.setLayoutProperty('lesaeriens', 'visibility', 'none')};
+				});
+			document.getElementById('lesaltitudes').addEventListener('change', function (event) {
+				let lesaltitudes_checked = event.target.checked;
+				if(lesaltitudes_checked == true){map.setLayoutProperty('lesaltitudes', 'visibility', 'visible')}
+				else {map.setLayoutProperty('lesaltitudes', 'visibility', 'none')};
+				});
+			document.getElementById('lesombres').addEventListener('change', function (event) {
+				let lesombres_checked = event.target.checked;
+				if(lesombres_checked == true){map.setLayoutProperty('lesombres', 'visibility', 'visible')}
+				else {map.setLayoutProperty('lesombres', 'visibility', 'none')};
+				});
+			document.getElementById('lerelief').addEventListener('change', function (event) {
+				let lesarcs_checked = event.target.checked;
+				if(lesarcs_checked == true){
+					map.setLayoutProperty('lerelief', 'visibility', 'visible');
+					map.setPaintProperty('lerelief', 'raster-opacity', 0.5);
+					}
+				else {map.setLayoutProperty('lerelief', 'visibility', 'none')};
+				});
+
+
 			// les fonctions sur la carte
 			//           dblclick pour changer de lieu
 			//           touchend pour changer de lieu sur tablette
@@ -447,7 +605,6 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 				urlParams.set('lat',coordinates[1]);
 				let description='<strong>Cliquer dessous pour recentrer</strong><BR/>'+
 								'<a href="'+window.location.pathname+'?'+urlParams+'">Recentrer sur ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>';
-								// <a href="https://fr.w3docs.com/">W3Docs.com</a>
 				touchmove_popup.setLngLat(coordinates).setHTML(description).addTo(map);
 		
 					});
@@ -457,7 +614,6 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 				urlParams.set('lat',coordinates[1]);
 				let description='<strong>Cliquer dessous pour recentrer</strong><BR/>'+
 								'<a href="'+window.location.pathname+'?'+urlParams+'">Recentrer sur ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>';
-								// <a href="https://fr.w3docs.com/">W3Docs.com</a>
 				touchmove_popup.setLngLat(coordinates).setHTML(description).addTo(map);
 		
 					});
@@ -489,6 +645,8 @@ function drawMap(obs_point,a_geojson,a_circle,some_sectors){
 			"longitude :"+x+" et latitude :"+y;
 				});	
 };
+
+
 // FIN DES FONCTIONS
 
 let urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -521,6 +679,13 @@ let wheel = parseFloat(urlParams.get('wheel'));
 // EN:POI data in geojson format with coordinates in lonLat format	
 let uneurl="./eolienne_bfc.json";
 let ungeojson;  // on definit ungeojson en variable globale pour le (re)utiliser à différents moments
+const map =  new maplibregl.Map({
+	container: 'map', // container id
+	// style: 'https://demotiles.maplibre.org/style.json', // style URL
+	style: 'https://geoserveis.icgc.cat/contextmaps/osm-bright.json',
+	center: obs_point, // starting position [lng, lat]
+	zoom: 11// starting zoom = 1 mais on prend 11
+	});
 	
 // INITIALISATION : LECTURE DES DONNEES ET CHARGEMENT DE LA CARTE
 document.getElementById("radiuschange").innerHTML=theradius;
@@ -569,7 +734,8 @@ unereponse=fetch(uneurl)
 	drawMap(obs_point,datum,a_circle=computeStatCircle(obs_point,datum,wheel),some_sectors=poiGroupings(obs_point,datum,wheel)) ;
 	}); // fin du .then(datum
 // fin du fetch	
-
+// les images sont recuperables en WMTS (cf. plus haut) et en wms raster ci-dessous
+// https://wxs.ign.fr/ortho/geoportail/r/wms?LAYERS=ORTHOIMAGERY.ORTHOPHOTOS&EXCEPTIONS=text/xml&FORMAT=image/geotiff&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&STYLES=&CRS=EPSG:4326&BBOX=47.34956960,3.25167353,47.38545104,3.30486151&WIDTH=256&HEIGHT=256
 </script>
 </body>
 </html>
