@@ -105,43 +105,51 @@
 	<div id="loadingign" >
 	</div>
 	<!-- Fonction 1 : deplacement -->
-	Pour déplacer le point d'observation, double-cliquez sur le point voulu. Les coordonnées sont les suivantes :
-	<div id="info" style="display: inline;" ></div>
-	<br/>
-	<!-- Fonction 2 : changement population -->	
-		<div id="cautionnewparam" style="color:black;">
-		Pour mettre à jour, cliquer sur le bouton
-	</div>
-	<div style="display: inline;">
-	Les éoliennes sont considérées dans un rayon de 
-	</div>
-		<div id="radius" style="display: inline;" >
-		10
-		</div>
+	<div style="display: inline;">	Les éoliennes sont considérées dans un rayon de </div>
+		<div id="radius" style="display: inline;" >	</div>
 		<div style="display: inline;" >km : il y en a </div>
 		<div style="display: inline;" id="nbpoi" ></div>
 		<div style="display: inline;" >dans </div>
 		<div style="display: inline;" id="nbpoigroup" ></div>
 		<div style="display: inline;" >
 		parcs.<br/>
-		Utilisez le curseur pour changer la valeur entre 1 et 25 km, actuellement 
+		Pour déplacer le point d'observation, double-cliquez sur le point voulu. 
+		<!-- Les coordonnées sont les suivantes :	<div id="info" style="display: inline;" ></div> -->
+		<br/>
+		Utilisez le curseur pour changer la valeur entre 1 et 25 km.
+		<br/>
+		<div id="form_poiradius_change" style="display: inline;" >min:1km
+		<input type="range" min="1" max="25" value="10" list="volsettings" class="slider" id="rangeElement" onchange="addMAJButton()">
+		<datalist id="volsettings">
+			<option>00</option>
+			<option>05</option>
+			<option>10</option>
+			<option>15</option>
+			<option>20</option>
+			<option>25</option>
+		</datalist>
+		max:25km  Le choix actuel est 
 		</div>
 		<div id="radiuschange" style="display: inline;" >10
+		</div>km.
 		</div>
-		<br/>
-		<div id="form_poiradius_change">
-		<input type="range" min="1" max="25" value="10" class="slider" id="rangeElement" onchange="addMAJButton()">
-		</div>
+	<br/>
+	<!-- Fonction 2 : changement population -->	
+
+
 		<div id="form_poitype_change">
 		  <input type="checkbox" id="choixinstr" name="instruct" value="instr" onchange="addMAJButton()" >
-		  <label for="choixinstr"> En instruction</label>
+		  <label for="choixinstr" style="color:red;"> En instruction</label>
 		  <input type="checkbox" id="choixaccord" name="accorde" value="accord" onchange="addMAJButton()" >
-		  <label for="choixaccor"> Accordée</label>
+		  <label for="choixaccor" style="color:green;"> Accordée</label>
 		  <input type="checkbox" id="choixconstr" name="construit" value="constr" onchange="addMAJButton()" >
-		  <label for="choixconstr"> Construite</label>
+		  <label for="choixconstr" style="color:blue;"> Construite</label>
 		  <input type="checkbox" id="choixrefus" name="refuse" value="refus" onchange="addMAJButton()" >
-		  <label for="choixconstr"> Refusé</label>
+		  <label for="choixconstr" > Refusée</label>
 		</div>
+		<div id="cautionnewparam" style="color:black;">
+		Pour mettre à jour, cliquer sur le bouton
+	</div>
 </div>
 <script>
 // generer aleatoirement des couleurs pour les groupes de POIs
@@ -460,23 +468,56 @@ customAttribution: "IGN"
 						'paint': {
 					"circle-color": "grey",// "circle-color": "hsla(0,0%,0%,0.75)",
 					"circle-stroke-width": 1.5,
-					"circle-stroke-color": "black",
+					"circle-stroke-color": "white",
 						},
 							'attribution': 'Tuiles/tiles : IGN &  Institut Cartogràfic i Geològic de Catalunya'
 					});	
 				// couche avec les eoliennes dans le rayon d'observation
 				// elles sont coloriees en rouge
 				map.addLayer({
-						'id': 'visiblepoisubset',
+						'id': 'poisubsetI',
 						'type': 'circle',
 						'source': 'poisubset',
 						'paint': {
 							"circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)",
-							"circle-stroke-width": 1.5,
+							"circle-stroke-width": 2.5,
 							"circle-stroke-color": "red"
-						}
+						},
+						'filter': ['==', 'LEG_MAT', 'en instruction']
+					});
+				map.addLayer({
+						'id': 'poisubsetA',
+						'type': 'circle',
+						'source': 'poisubset',
+						'paint': {
+							"circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)",
+							"circle-stroke-width": 2,
+							"circle-stroke-color": "green"
+						},
+						'filter': ['==', 'LEG_MAT', 'accordée']
 					});	
-				// couche avec les parcs en couleur
+				map.addLayer({
+						'id': 'poisubsetC',
+						'type': 'circle',
+						'source': 'poisubset',
+						'paint': {
+							"circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)",
+							"circle-stroke-width": 2,
+							"circle-stroke-color": "blue"
+						},
+						'filter': ['==', 'LEG_MAT', 'construite']
+					});	
+				map.addLayer({
+						'id': 'poisubsetR',
+						'type': 'circle',
+						'source': 'poisubset',
+						'paint': {
+							"circle-color": ["get","lacouleur"],// "circle-color": "hsla(0,0%,0%,0.75)",
+							"circle-stroke-width": 2,
+							"circle-stroke-color": "black"
+						},
+						'filter': ['==', 'LEG_MAT', 'refusée']
+					});					// couche avec les parcs en couleur
 				map.addLayer({
 						'id': 'lesarcs',
 						'type': 'fill',
@@ -656,7 +697,7 @@ let urlParams = new URL(window.location.toLocaleString()).searchParams;
 if(urlParams.has('lat')==false){urlParams.set('lat',47.6675);}   // default lat for obspoint
 if(urlParams.has('lon')==false){urlParams.set('lon',4.2261) ;}     // default lon for obspoint
 if(urlParams.has('radius')==false){urlParams.set('radius',10);}  // default radius for poi : 10 km 
-if(urlParams.has('poitype')==false){urlParams.set('poitype','CAI');}  // default radius for poi : 10 km 
+if(urlParams.has('poitype')==false){urlParams.set('poitype','CA');}  // default radius for poi : 10 km 
 if(urlParams.has('wheel')==false){urlParams.set('wheel',5);}     // default radius for wheel : 5 km 
 if(window.location.href.indexOf(urlParams)<0){window.location.assign(window.location.pathname+"?"+urlParams);}
 //	}
@@ -689,6 +730,7 @@ const map =  new maplibregl.Map({
 	
 // INITIALISATION : LECTURE DES DONNEES ET CHARGEMENT DE LA CARTE
 document.getElementById("radiuschange").innerHTML=theradius;
+document.getElementById("radius").innerHTML=theradius;
 document.getElementById("rangeElement").value=theradius;		
 unereponse=fetch(uneurl)
 // step 1
