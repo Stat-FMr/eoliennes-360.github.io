@@ -644,8 +644,9 @@ customAttribution: "IGN"
 				let coordinates = e.lngLat.toArray();
 				urlParams.set('lon',coordinates[0]);
 				urlParams.set('lat',coordinates[1]);
-				let description='<strong>Cliquer dessous pour recentrer</strong><BR/>'+
-								'<a href="'+window.location.pathname+'?'+urlParams+'">Recentrer sur ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>';
+				let description='<strong>Cliquer ci-dessous pour <BR/>changer d&apos;emplacement</strong><BR/>'+
+								'<a href="'+window.location.pathname+'?'+urlParams+'">Centrer sur le point ['+Math.round(1000*coordinates[0])/1000+","+Math.round(1000*coordinates[1])/1000+']</a>'+
+								'<BR/>ou continuer à déplacer la carte';
 				touchmove_popup.setLngLat(coordinates).setHTML(description).addTo(map);
 		
 					});
