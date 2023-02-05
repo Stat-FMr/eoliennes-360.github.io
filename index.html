@@ -679,13 +679,13 @@ customAttribution: "IGN"
 				poi_popup.remove();
 			});
 			// suivi du pointeur
-			map.on('mousemove', function (e) {
-			let x=Math.round(1000*e.lngLat.lng)/1000;
-			let y=Math.round(1000*e.lngLat.lat)/1000;
-			document.getElementById('info').innerHTML =
+			<!-- map.on('mousemove', function (e) { -->
+			<!-- let x=Math.round(1000*e.lngLat.lng)/1000; -->
+			<!-- let y=Math.round(1000*e.lngLat.lat)/1000; -->
+			<!-- document.getElementById('info').innerHTML = -->
 
-			"longitude :"+x+" et latitude :"+y;
-				});	
+			<!-- "longitude :"+x+" et latitude :"+y; -->
+				<!-- });	 -->
 };
 
 
@@ -719,7 +719,8 @@ let wheel = parseFloat(urlParams.get('wheel'));
 	
 // FR:ensemble des donnees des POI au format geojson avec coordonnees longitude puis latitude
 // EN:POI data in geojson format with coordinates in lonLat format	
-let uneurl="./eolienne_bfc.json";
+<!-- let uneurl="./eolienne_bfc.json"; -->
+let uneurl="https://trouver.ternum-bfc.fr/dataset/823e3d64-cd5c-4b0d-bf52-db8036e7f5bd/resource/7d4e3b72-0ac2-4596-b3e0-29deffef8614/service_proxy?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAME=n_mat_eolien_p_r27_97e1489&OUTPUTFORMAT=geojson&CRSNAME=EPSG:4326";
 let ungeojson;  // on definit ungeojson en variable globale pour le (re)utiliser à différents moments
 const map =  new maplibregl.Map({
 	container: 'map', // container id
