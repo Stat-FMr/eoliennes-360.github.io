@@ -221,7 +221,7 @@ function profilAlti(pointA,pointB){
 	let lonA=pointA[0];
 	let latB=pointB[1];
 	let lonB=pointB[0];
-	const getprofil="https://wxs.ign.fr/calcul/alti/rest/elevationLine.json?sampling=10&lon="+lonA+"|"+lonB+"&lat="+latA+"|"+latB;
+	const getprofil="https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevationLine.json?resource=ign_rge_alti_wld&delimiter=|&sampling=10&lon="+lonA+"|"+lonB+"&lat="+latA+"|"+latB;
 	const xmlHttp = new XMLHttpRequest();
     xmlHttp.open( "GET", getprofil, false ); // false for synchronous request
     xmlHttp.send( null );
